@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ani213/student-api/internal/config"
+	"github.com/ani213/student-api/internal/http/handler/student"
 )
 
 func main() {
@@ -26,6 +27,8 @@ func main() {
 		w.Write([]byte("Welcome to student API"))
 	})
 
+	// Register the student creation handler at the "/students" path
+	router.HandleFunc("POST /api/student", student.CreateStudent())
 	// Print the configured port to the console for visibility
 
 	// Create the HTTP server with the loaded address and request handler
