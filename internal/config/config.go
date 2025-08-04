@@ -2,6 +2,7 @@ package config
 
 import (
 	"log"
+	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -24,7 +25,10 @@ type Config struct {
 // It uses cleanenv to load values from a YAML file into the Config struct.
 func MustLoad() *Config {
 	var cfg Config
-
+	// Storage folder created if not exists
+	if err := CreateStorageFolderIfNotExists(); err != nil {
+		log.Fatalf("Failed to create storage folder: %v", err)
+	}
 	// Attempt to read the configuration file
 	err := cleanenv.ReadConfig("config/local.yaml", &cfg)
 	if err != nil {
@@ -34,4 +38,15 @@ func MustLoad() *Config {
 
 	// Return pointer to loaded config
 	return &cfg
+}
+
+func CreateStorageFolderIfNotExists() error {
+	_, err := os.Stat("storage")
+	if os.IsNotExist(err) {
+		err = os.Mkdir("storage", 0755)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
