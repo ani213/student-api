@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/ani213/student-api/internal/config"
 	"github.com/ani213/student-api/internal/types"
@@ -78,6 +79,25 @@ func (s *Sqlite) GetStudentById(id int64) (types.Student, error) {
 		return types.Student{}, err
 	}
 	return student, nil
+}
+func (s *Sqlite) UpdateStudent(id int64, name string, age int, email string) error {
+	stmt, err := s.Db.Prepare("UPDATE students SET name = ?, age = ?, email = ? WHERE id = ?")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	result, err := stmt.Exec(name, age, email, id)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("no student found with ID %d", id)
+	}
+	return nil
 }
 
 func New(cfg *config.Config) (*Sqlite, error) {

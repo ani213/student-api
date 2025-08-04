@@ -89,3 +89,43 @@ func GetStudentById(storage storage.Storage) http.HandlerFunc {
 		response.WriteJson(w, http.StatusOK, student)
 	}
 }
+
+func UpdateStudent(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Logic to update a student
+		id := r.PathValue("id")
+		slog.Info("Updating student", slog.String("id", id))
+		studentId, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			slog.Error("Invalid student ID", slog.String("id", id), slog.String("error", err.Error()))
+			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("invalid student ID")))
+			return
+		}
+		body := r.Body
+		defer body.Close()
+		var student types.Student
+		err = json.NewDecoder(body).Decode(&student)
+		if err != nil {
+			slog.Error("Failed to decode request body", slog.String("error", err.Error()))
+			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
+			return
+		}
+
+		// Validate the student data
+		if err := validator.New().Struct(student); err != nil {
+			validationError := err.(validator.ValidationErrors)
+			response.WriteJson(w, http.StatusBadRequest, response.ValidationError(validationError))
+			return
+		}
+		// Update the student in the storage
+		err = storage.UpdateStudent(studentId, student.Name, student.Age, student.Email)
+		if err != nil {
+			slog.Error("Failed to update student", slog.String("id", id), slog.String("error", err.Error()))
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
+		}
+		slog.Info("Student updated successfully", slog.Int64("student_id", studentId))
+		response.WriteJson(w, http.StatusOK, map[string]string{"message": "Student updated successfully"})
+
+	}
+}
