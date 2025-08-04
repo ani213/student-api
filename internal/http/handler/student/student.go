@@ -56,7 +56,14 @@ func GetStudents(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Logic to get all students
 		slog.Info("Fetching all students")
-		response.WriteJson(w, http.StatusOK, map[string]string{"message": "This endpoint is not implemented yet"})
+		students, err := storage.GetStudents()
+		if err != nil {
+			slog.Error("Failed to fetch students", slog.String("error", err.Error()))
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
+		}
+		slog.Info("Students fetched successfully", slog.Int("count", len(students)))
+		response.WriteJson(w, http.StatusOK, students)
 	}
 }
 

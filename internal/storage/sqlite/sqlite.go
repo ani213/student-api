@@ -45,8 +45,25 @@ func (s *Sqlite) GetStudents() ([]types.Student, error) {
 		return []types.Student{}, err
 	}
 	defer stmt.Close()
+	rows, err := stmt.Query()
+	if err != nil {
+		return []types.Student{}, err
+	}
+	defer rows.Close()
+	var students []types.Student
+	for rows.Next() {
+		var student types.Student
+		err = rows.Scan(&student.ID, &student.Name, &student.Age, &student.Email)
+		if err != nil {
+			return []types.Student{}, err
+		}
+		students = append(students, student)
+	}
+	if err = rows.Err(); err != nil {
+		return []types.Student{}, err
+	}
 
-	return []types.Student{}, nil
+	return students, nil
 }
 
 func (s *Sqlite) GetStudentById(id int64) (types.Student, error) {
