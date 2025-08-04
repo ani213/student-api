@@ -12,6 +12,7 @@ import (
 
 	"github.com/ani213/student-api/internal/config"
 	"github.com/ani213/student-api/internal/http/handler/student"
+	"github.com/ani213/student-api/internal/storage/sqlite"
 )
 
 func main() {
@@ -19,18 +20,25 @@ func main() {
 	// Panics if required fields are missing
 	cfg := config.MustLoad()
 
+	// Storage setup
+	storage, err := sqlite.New(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	slog.Info("Storage initialized", slog.String("storage_path", cfg.StoragePath), slog.String("ENV", cfg.Env))
+
 	// Initialize the HTTP request multiplexer (router)
 	router := http.NewServeMux()
 
 	// Register a simple GET endpoint at the root path
-	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Welcome to student API"))
-	})
+	// router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+	// 	w.Write([]byte("Welcome to student API"))
+	// })
 
 	// Register the student creation handler at the "/students" path
-	router.HandleFunc("POST /api/student", student.CreateStudent())
-	// Print the configured port to the console for visibility
-
+	router.HandleFunc("POST /api/student", student.CreateStudent(storage))
+	router.HandleFunc("GET /api/students", student.GetStudents(storage))
+	router.HandleFunc("GET /api/student/{id}", student.GetStudentById(storage))
 	// Create the HTTP server with the loaded address and request handler
 	server := http.Server{
 		Addr:    cfg.Addr,
@@ -62,7 +70,7 @@ func main() {
 	defer cancel()
 
 	// Attempt graceful shutdown
-	err := server.Shutdown(ctx)
+	err = server.Shutdown(ctx)
 	if err != nil {
 		slog.Error("Failed to shutdown server", slog.String("error", err.Error()))
 	} else {

@@ -9,12 +9,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/ani213/student-api/internal/storage"
 	"github.com/ani213/student-api/internal/types"
 	"github.com/ani213/student-api/internal/utils/response"
 	"github.com/go-playground/validator/v10"
 )
 
-func CreateStudent() http.HandlerFunc {
+func CreateStudent(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Logic to create a student
 		slog.Info("Creating... student")
@@ -38,7 +39,46 @@ func CreateStudent() http.HandlerFunc {
 			return
 		}
 
-		response.WriteJson(w, http.StatusCreated, map[string]string{"message": "Student created successfully", "student_id": strconv.Itoa(student.ID)})
+		// Create the student in the storage
+		lastId, err := storage.CreateStudent(student.Name, student.Age, student.Email)
+		if err != nil {
+			slog.Error("Failed to create student", slog.String("error", err.Error()))
+			response.WriteJson(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		slog.Info("Student created successfully", slog.Int64("student_id", lastId))
+		response.WriteJson(w, http.StatusCreated, map[string]string{"message": "Student created successfully", "student_id": strconv.Itoa(int(lastId))})
 	}
 
+}
+
+func GetStudents(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Logic to get all students
+		slog.Info("Fetching all students")
+		response.WriteJson(w, http.StatusOK, map[string]string{"message": "This endpoint is not implemented yet"})
+	}
+}
+
+func GetStudentById(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Logic to get a student by ID
+		id := r.PathValue("id")
+
+		slog.Info("Fetching student by ID", slog.String("id", id))
+		studentId, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			slog.Error("Invalid student ID", slog.String("id", id), slog.String("error", err.Error()))
+			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("invalid student ID")))
+			return
+		}
+		student, err := storage.GetStudentById(studentId)
+		if err != nil {
+			slog.Error("Failed to fetch student", slog.String("id", id), slog.String("error", err.Error()))
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
+		}
+		slog.Info("Student fetched successfully", slog.Int64("student_id", student.ID))
+		response.WriteJson(w, http.StatusOK, student)
+	}
 }

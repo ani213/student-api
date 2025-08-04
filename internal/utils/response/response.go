@@ -10,7 +10,7 @@ import (
 )
 
 type Response struct {
-	Status string `json:"custom_status"`
+	Status string `json:"status"`
 	Error  string `json:"error"`
 }
 
