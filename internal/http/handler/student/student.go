@@ -63,7 +63,10 @@ func GetStudents(storage storage.Storage) http.HandlerFunc {
 			return
 		}
 		slog.Info("Students fetched successfully", slog.Int("count", len(students)))
-		response.WriteJson(w, http.StatusOK, students)
+		response.WriteJson(w, http.StatusOK, types.StudentsResponse{
+			Students: students,
+			Status:   "success",
+		})
 	}
 }
 
@@ -86,7 +89,9 @@ func GetStudentById(storage storage.Storage) http.HandlerFunc {
 			return
 		}
 		slog.Info("Student fetched successfully", slog.Int64("student_id", student.ID))
-		response.WriteJson(w, http.StatusOK, student)
+		response.WriteJson(w, http.StatusOK, types.GetStudentByIdResponse{
+			Student: student,
+		})
 	}
 }
 
